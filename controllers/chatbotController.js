@@ -59,7 +59,7 @@ exports.getAnswer = async (req, res) => {
         })
       : [];
 
-    console.log('Converted Links:', links);
+    // console.log('Converted Links:', links);
 
     res.json({
       reply: responseText,
