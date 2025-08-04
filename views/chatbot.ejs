@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Chatbot</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    #chatIcon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: #007bff;
+      border-radius: 50%;
+      color: white;
+      font-size: 30px;
+      text-align: center;
+      line-height: 60px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    #chatbox {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 320px;
+      max-height: 500px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1000;
+    }
+
+    #chatDisplay {
+      flex-grow: 1;
+      padding: 10px;
+      overflow-y: auto;
+      max-height: 300px;
+    }
+
+    .chat-message {
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+
+    .user-msg {
+      background: #dcf8c6;
+      align-self: flex-end;
+      text-align: right;
+    }
+
+    .bot-msg {
+      background: #f1f0f0;
+      align-self: flex-start;
+    }
+
+    #questionButtons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 10px;
+      justify-content: center;
+    }
+
+    .question-btn {
+      padding: 6px 12px;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    #inputArea {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    #messageInput {
+      flex-grow: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+    }
+
+    #sendBtn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 0 15px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    a.doc-link {
+      color: #007bff;
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div id="chatIcon">💬</div>
+
+  <div id="chatbox">
+    <div id="chatDisplay"></div>
+
+    <div id="questionButtons"></div>
+
+    <div id="inputArea">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button id="sendBtn">➤</button>
+    </div>
+  </div>
+
+  <script>
+  const chatIcon = document.getElementById('chatIcon');
+  const chatbox = document.getElementById('chatbox');
+  const chatDisplay = document.getElementById('chatDisplay');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const questionButtonsContainer = document.getElementById('questionButtons');
+
+  const defaultQuestions = [
+    "AVG,Objective",
+    "DSG,Objective",
+    "MKT,Objective",
+    "QAD,Objective",
+    "PUR,Objective"
+  ];
+
+  chatIcon.addEventListener('click', () => {
+    chatbox.style.display = chatbox.style.display === 'none' ? 'flex' : 'none';
+  });
+
+  function appendMessage(sender, text, links = []) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('chat-message', sender === 'You' ? 'user-msg' : 'bot-msg');
+    msgDiv.innerHTML = `<strong>${sender}:</strong> ${text.replace(/\n/g, '<br>')}`;
+
+    // Add document links, if any
+    if (Array.isArray(links) && links.length > 0) {
+      links.forEach(link => {
+        const linkElem = document.createElement('a');
+        linkElem.href = link;
+        linkElem.textContent = '🔗 View Document';
+        linkElem.className = 'doc-link';
+        linkElem.target = '_blank';
+        linkElem.style.display = 'block';
+        msgDiv.appendChild(linkElem);
+      });
+    }
+
+    chatDisplay.appendChild(msgDiv);
+    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+  }
+
+  function handleMessage(message) {
+    appendMessage('You', message);
+
+    fetch('/get-answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+      appendMessage('Bot', data.reply, data.links || []);
+      showSuggestions(defaultQuestions); // Refresh to default each time
+    })
+    .catch(err => {
+      appendMessage('Bot', '⚠️ Error processing your message. Please try again later.');
+    });
+  }
+
+  function showSuggestions(questions) {
+    questionButtonsContainer.innerHTML = '';
+    questions.forEach(q => {
+      const btn = document.createElement('button');
+      btn.className = 'question-btn';
+      btn.textContent = q;
+      btn.onclick = () => handleMessage(q);
+      questionButtonsContainer.appendChild(btn);
+    });
+  }
+
+  sendBtn.addEventListener('click', () => {
+    const msg = messageInput.value.trim();
+    if (msg) {
+      handleMessage(msg);
+      messageInput.value = '';
+    }
+  });
+
+  messageInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendBtn.click();
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    showSuggestions(defaultQuestions);
+  });
+</script>
+</body>
+</html>
