@@ -41,36 +41,31 @@ exports.getAnswer = async (req, res) => {
     if (!matchedData) {
       return res.json({
         reply: "Sorry, I couldn't find a matching response. Please try again with different wording.",
-        links: []
       });
     }
 
     const responseText = matchedData.RESPONSE || matchedData.response || 'No response available.';
 
-    // ✅ Convert filenames to full links
-    const links = matchedData.LINKS
-      ? matchedData.LINKS.split(/[,;|\n]/).map(link => {
-          link = link.trim();
-          if (!link.startsWith("http")) {
-            // Convert filename to full download URL
-            return `https://yourdomain.com/uploads/${encodeURIComponent(link)}`;
-          }
-          return link;
-        })
-      : [];
+    // Extract and format the first valid link
+    let link = '';
+    if (matchedData.USERINPUT) {
+      const firstLink = matchedData.USERINPUT.split(/[,;|\n]/)[0].trim();
 
-    // console.log('Converted Links:', links);
+      link = firstLink.startsWith('http')
+        ? firstLink
+        : `https://yourdomain.com/uploads/${encodeURIComponent(firstLink)}`;
+    }
 
-    res.json({
-      reply: responseText,
-      links
-    });
+    const finalReply = link
+      ? `<a href="${link}" target="_blank">${responseText}</a>`
+      : responseText;
+
+    res.json({ reply: finalReply });
 
   } catch (err) {
     console.error('❌ Error in getAnswer:', err.message);
     res.status(500).json({
-      reply: 'Server error while processing question.',
-      links: []
+      reply: 'Server error while processing question.'
     });
   }
 };
