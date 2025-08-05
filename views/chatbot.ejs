@@ -111,6 +111,13 @@
       font-size: 13px;
       word-break: break-all;
     }
+    .doc-link {
+  color: #2196f3;
+  text-decoration: underline;
+}
+.doc-link:hover {
+  color: #0b79d0;
+}
   </style>
 </head>
 <body>
@@ -148,26 +155,20 @@
   });
 
   function appendMessage(sender, text, links = []) {
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('chat-message', sender === 'You' ? 'user-msg' : 'bot-msg');
+  const msgDiv = document.createElement('div');
+  msgDiv.classList.add('chat-message', sender === 'You' ? 'user-msg' : 'bot-msg');
+
+  if (sender !== 'You' && links.length > 0) {
+    // Entire response wrapped in <a> tag
+    msgDiv.innerHTML = `<strong>${sender}:</strong> <a href="${links[0]}" target="_blank" class="doc-link">${text}</a>`;
+  } else {
     msgDiv.innerHTML = `<strong>${sender}:</strong> ${text.replace(/\n/g, '<br>')}`;
-
-    // Add document links, if any
-    if (Array.isArray(links) && links.length > 0) {
-      links.forEach(link => {
-        const linkElem = document.createElement('a');
-        linkElem.href = link;
-        linkElem.textContent = '🔗 View Document';
-        linkElem.className = 'doc-link';
-        linkElem.target = '_blank';
-        linkElem.style.display = 'block';
-        msgDiv.appendChild(linkElem);
-      });
-    }
-
-    chatDisplay.appendChild(msgDiv);
-    chatDisplay.scrollTop = chatDisplay.scrollHeight;
   }
+
+  chatDisplay.appendChild(msgDiv);
+  chatDisplay.scrollTop = chatDisplay.scrollHeight;
+}
+
 
   function handleMessage(message) {
     appendMessage('You', message);
